@@ -1,0 +1,30 @@
+# ====== Sensitive or private apps ======
+1Password/
+Proton Mail/
+Signal/
+
+# ====== Browsers (cache, history, extensions) ======
+BraveSoftware/
+brave-flags.conf
+chromium*
+google-chrome*/
+vivaldi*/
+microsoft-edge-dev/
+mimeapps.list
+
+# ====== GUI, fonts, system caches ======
+gtk-3.0/
+fontconfig/
+pulse/
+yay/
+Unknown Organization/
+
+# ====== Machine- or path-specific ======
+nautilus/
+dconf/
+user-dirs.*
+systemd/
+uwsm/
+environment.d/
+Typora/
+
