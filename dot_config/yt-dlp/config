@@ -13,6 +13,12 @@
 # flac makes the file several times larger and restores nothing. --music keeps
 # the original stream and is the better choice for a library; --flac is here
 # because sometimes a tool downstream demands it.
+#
+# Every audio alias measures the loudness afterwards with rsgain, so one track
+# does not arrive twice as loud as the last. For opus that gain goes in the
+# OpusHead header (-o t) rather than in a tag: kew only reads ReplayGain tags
+# from mp3 and flac, but it decodes opus through libopusfile, which applies the
+# header gain on its own. Nothing happens where rsgain is not installed.
 
 --embed-metadata
 --embed-chapters
@@ -20,7 +26,7 @@
 --trim-filenames 150
 --paths temp:~/.cache/yt-dlp
 
---alias tagged "--embed-thumbnail --parse-metadata '%(artist,uploader)s:%(meta_artist)s' --parse-metadata '%(album,playlist,title)s:%(meta_album)s' --parse-metadata '%(release_year,upload_date>%Y)s:%(meta_date)s'"
+--alias tagged "--embed-thumbnail --parse-metadata '%(artist,uploader)s:%(meta_artist)s' --parse-metadata '%(album,playlist,title)s:%(meta_album)s' --parse-metadata '%(release_year,upload_date>%Y)s:%(meta_date)s' --exec 'command -v rsgain >/dev/null && rsgain custom -s i -o t -p -q %(filepath)q || true'"
 
 --alias video "-f bv*+ba/b --merge-output-format mkv --embed-thumbnail --paths home:~/Videos -o '%(title)s [%(id)s].%(ext)s'"
 

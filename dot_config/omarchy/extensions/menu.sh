@@ -1,20 +1,56 @@
-# Sourced by omarchy-menu. Replaces the main menu with one list holding every
-# action in the tree, each labelled with the path that leads to it and what it
-# does. Opening the menu shows what you used lately and the sections, so it
-# reads like the menu Omarchy ships; typing searches the whole tree at once,
-# which is when you already know what you are after.
+# Sourced by omarchy-menu. The menu still opens on Omarchy's own ten sections
+# and still goes deeper and deeper the way it always did; below them sits every
+# action in the tree, labelled with the path that leads to it, so a search
+# reaches the whole tree at once instead of one level of it.
 #
-# Picking a section opens Omarchy's own submenu, unchanged.
+# Actions carry no description by default, because walker matches whatever it
+# shows and a sentence of explanation on 230 rows is 230 rows of false matches.
+# The eleventh row turns them on when you want to read rather than search.
+
+# Omarchy's browser list is written out by hand and LibreWolf is not on it.
+show_setup_default_browser_menu() {
+  local current
+  local options
+  browser_desktop_exists chromium.desktop && options="  Chromium"
+  browser_desktop_exists google-chrome.desktop && options="${options:+$options\n}󰊯  Chrome"
+  browser_desktop_exists brave-browser.desktop && options="${options:+$options\n}󰖟  Brave"
+  browser_desktop_exists brave-origin-beta.desktop && options="${options:+$options\n}󰖟  Brave Origin"
+  browser_desktop_exists microsoft-edge.desktop && options="${options:+$options\n}󰇩  Edge"
+  browser_desktop_exists firefox.desktop && options="${options:+$options\n}󰈹  Firefox"
+  browser_desktop_exists librewolf.desktop && options="${options:+$options\n}󰖟  LibreWolf"
+  browser_desktop_exists zen.desktop && options="${options:+$options\n}󰖟  Zen"
+
+  case "$(omarchy-default-browser)" in
+  chromium) current="  Chromium" ;;
+  chrome) current="󰊯  Chrome" ;;
+  brave) current="󰖟  Brave" ;;
+  brave-origin) current="󰖟  Brave Origin" ;;
+  edge) current="󰇩  Edge" ;;
+  firefox) current="󰈹  Firefox" ;;
+  librewolf) current="󰖟  LibreWolf" ;;
+  zen) current="󰖟  Zen" ;;
+  esac
+
+  case $(menu "Default Browser" "$options" "" "$current") in
+  *Chromium*) omarchy-default-browser chromium ;;
+  *Chrome*) omarchy-default-browser chrome ;;
+  *"Brave Origin"*) omarchy-default-browser brave-origin ;;
+  *Brave*) omarchy-default-browser brave ;;
+  *Edge*) omarchy-default-browser edge ;;
+  *Firefox*) omarchy-default-browser firefox ;;
+  *LibreWolf*) omarchy-default-browser librewolf ;;
+  *Zen*) omarchy-default-browser zen ;;
+  *) show_setup_default_menu ;;
+  esac
+}
 
 OMARCHY_FLAT_SOURCE="${OMARCHY_PATH:-$HOME/.local/share/omarchy}/bin/omarchy-menu"
 OMARCHY_FLAT_BUILDER="$HOME/.config/omarchy/extensions/menu-index.py"
 OMARCHY_FLAT_HINTS="$HOME/.config/omarchy/extensions/menu-hints.tsv"
 OMARCHY_FLAT_INDEX="${XDG_CACHE_HOME:-$HOME/.cache}/omarchy/menu-index.tsv"
 OMARCHY_FLAT_STATE="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/menu"
-OMARCHY_FLAT_RECENT="$OMARCHY_FLAT_STATE/recent"
-OMARCHY_FLAT_QUIET="$OMARCHY_FLAT_STATE/descriptions-off"
+OMARCHY_FLAT_LOUD="$OMARCHY_FLAT_STATE/descriptions-on"
 OMARCHY_FLAT_FIELD=" · "
-OMARCHY_FLAT_KEEP=8
 
 omarchy_flat_index() {
   [[ -s $OMARCHY_FLAT_INDEX &&
@@ -26,13 +62,6 @@ omarchy_flat_index() {
   python3 "$OMARCHY_FLAT_BUILDER" build "$OMARCHY_FLAT_SOURCE" >"$OMARCHY_FLAT_INDEX.new" 2>/dev/null &&
     [[ -s $OMARCHY_FLAT_INDEX.new ]] &&
     mv "$OMARCHY_FLAT_INDEX.new" "$OMARCHY_FLAT_INDEX"
-}
-
-omarchy_flat_remember() {
-  local display="$1" kept
-  mkdir -p "$OMARCHY_FLAT_STATE"
-  kept=$(grep -vxF -- "$display" "$OMARCHY_FLAT_RECENT" 2>/dev/null | head -n "$OMARCHY_FLAT_KEEP")
-  printf '%s\n%s\n' "$display" "$kept" | grep -v '^$' >"$OMARCHY_FLAT_RECENT"
 }
 
 omarchy_flat_answer() {
@@ -71,10 +100,10 @@ show_main_menu() {
     return
   }
 
-  local described=1 width=880 choice display row
-  [[ -f $OMARCHY_FLAT_QUIET ]] && described=0 && width=520
+  local described=0 width=700 choice display row
+  [[ -f $OMARCHY_FLAT_LOUD ]] && described=1 && width=880
 
-  choice=$(python3 "$OMARCHY_FLAT_BUILDER" render "$OMARCHY_FLAT_INDEX" "$OMARCHY_FLAT_RECENT" "$described" |
+  choice=$(python3 "$OMARCHY_FLAT_BUILDER" render "$OMARCHY_FLAT_INDEX" "$described" |
     omarchy-launch-walker --dmenu --width "$width" --minheight 1 --maxheight 700 -p "Go…" 2>/dev/null)
   [[ -z $choice || $choice == "CNCLD" ]] && exit 0
 
@@ -82,7 +111,7 @@ show_main_menu() {
 
   if [[ $display == *"Descriptions: "* ]]; then
     mkdir -p "$OMARCHY_FLAT_STATE"
-    ((described)) && touch "$OMARCHY_FLAT_QUIET" || rm -f "$OMARCHY_FLAT_QUIET"
+    ((described)) && rm -f "$OMARCHY_FLAT_LOUD" || touch "$OMARCHY_FLAT_LOUD"
     show_main_menu
     return
   fi
@@ -90,6 +119,5 @@ show_main_menu() {
   row=$(awk -F'\t' -v want="$display" '$1 == want { print; exit }' "$OMARCHY_FLAT_INDEX")
   [[ -z $row ]] && exit 0
 
-  omarchy_flat_remember "$display"
   omarchy_flat_answer "$(cut -f3 <<<"$row")" "$(cut -f2 <<<"$row")"
 }

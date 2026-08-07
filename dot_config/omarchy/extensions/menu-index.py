@@ -9,9 +9,11 @@
         the entry does. Running an entry means calling `function` with `menu`
         stubbed to answer `option`.
 
-    menu-index.py render <index> <recent-file> <0|1 descriptions>
-        Prints the lines to show: what was used lately, then the sections, then
-        everything else, then the row that turns descriptions off and on.
+    menu-index.py render <index> <0|1 descriptions>
+        Prints the lines to show: Omarchy's own ten sections, the row that turns
+        descriptions off and on, then every action in the tree. The sections
+        come first and behave as they always did, so the menu still opens on the
+        menu; the actions below it are what a search reaches.
 
 Descriptions come from menu-hints.tsv where it has an opinion, then from the
 path for the repetitive families, then from the `omarchy:summary=` line of the
@@ -35,7 +37,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 HINTS = os.path.join(HERE, "menu-hints.tsv")
 SEPARATOR = " › "
 FIELD = " · "
-RECENT_SHOWN = 3
 TOGGLE_ICON = "󰋼"
 
 
@@ -226,6 +227,14 @@ def build(source_path):
     source = open(source_path, encoding="utf-8").read()
     bindir = os.path.dirname(os.path.abspath(source_path))
     functions = read_functions(source)
+
+    # menu.sh replaces some of those functions at runtime, so the index has to
+    # read it too or a search cannot reach what an override added. Its own
+    # show_main_menu is this list; taking it would make the index recursive.
+    overrides = read_functions(open(os.path.join(HERE, "menu.sh"), encoding="utf-8").read())
+    overrides.pop("show_main_menu", None)
+    functions.update(overrides)
+
     hints = read_hints()
     top, _ = menu_options(functions["show_main_menu"])
     dispatch = case_branches(functions["go_to_menu"], 0)
@@ -248,41 +257,35 @@ def build(source_path):
 # Rendering --------------------------------------------------------------
 
 
-def render(index_path, recent_path, descriptions):
+def render(index_path, descriptions):
     rows = []
     for line in open(index_path, encoding="utf-8"):
         fields = line.rstrip("\n").split("\t")
         if len(fields) == 4:
             rows.append(fields)
 
-    sections = [r for r in rows if r[1] == "go_to_menu"]
-    actions = [r for r in rows if r[1] != "go_to_menu"]
+    def show(row, described):
+        display, _, _, description = row
+        print(f"{display}{FIELD}{description}" if described and description else display)
 
-    recent = []
-    if os.path.exists(recent_path):
-        wanted = [line.strip() for line in open(recent_path, encoding="utf-8")]
-        by_display = {r[0]: r for r in actions}
-        for display in wanted[:RECENT_SHOWN]:
-            if display in by_display and by_display[display] not in recent:
-                recent.append(by_display[display])
+    # Omarchy's own ten sections, in Omarchy's own order, so the menu still
+    # opens on the menu and still goes deeper from there.
+    for row in rows:
+        if row[1] == "go_to_menu":
+            show(row, descriptions)
 
     state = "on" if descriptions else "off"
-    toggle = [f"{TOGGLE_ICON}  Descriptions: {state}",
-              "__descriptions__",
-              "",
-              "the line of explanation under every entry, pick to turn it off"]
+    show([f"{TOGGLE_ICON}  Descriptions: {state}", "__descriptions__", "",
+          "spell out what every entry does; off keeps searching to the path"], descriptions)
 
-    order = recent + sections + [r for r in actions if r not in recent] + [toggle]
-    for display, _, _, description in order:
-        if descriptions and description:
-            print(f"{display}{FIELD}{description}")
-        else:
-            print(display)
+    for row in rows:
+        if row[1] != "go_to_menu":
+            show(row, descriptions)
 
 
 def main():
     if len(sys.argv) > 2 and sys.argv[1] == "render":
-        render(sys.argv[2], sys.argv[3], sys.argv[4] == "1")
+        render(sys.argv[2], sys.argv[3] == "1")
     elif len(sys.argv) > 2 and sys.argv[1] == "build":
         build(sys.argv[2])
     else:
