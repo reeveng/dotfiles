@@ -1,0 +1,37 @@
+# yt-dlp defaults and shorthands. Aliases are yt-dlp's own feature, so these
+# are real flags: `yt-dlp --video URL`, `yt-dlp --flac URL`.
+#
+#   --video          best picture and sound, merged, into ~/Videos
+#   --hd 1080        the same, capped at a height you name
+#   --audio          the best audio there is, left in its own format, into ~/Music
+#   --flac           audio converted to flac (see the note below)
+#   --music          audio filed as Artist/Title, tagged and with cover art
+#   --clip 0:30 1:45 just that stretch, cut without re-encoding
+#   --sub            burn in nothing, but keep English subtitles alongside
+#
+# Note on flac: what YouTube serves is already lossy opus or aac. Converting to
+# flac makes the file several times larger and restores nothing. --music keeps
+# the original stream and is the better choice for a library; --flac is here
+# because sometimes a tool downstream demands it.
+
+--embed-metadata
+--embed-chapters
+--no-mtime
+--trim-filenames 150
+--paths temp:~/.cache/yt-dlp
+
+--alias tagged "--embed-thumbnail --parse-metadata '%(artist,uploader)s:%(meta_artist)s' --parse-metadata '%(album,playlist,title)s:%(meta_album)s' --parse-metadata '%(release_year,upload_date>%Y)s:%(meta_date)s'"
+
+--alias video "-f bv*+ba/b --merge-output-format mkv --embed-thumbnail --paths home:~/Videos -o '%(title)s [%(id)s].%(ext)s'"
+
+--alias hd "-f bv*[height<=?{0}]+ba/b[height<=?{0}] --merge-output-format mkv --paths home:~/Videos -o '%(title)s [%(id)s].%(ext)s'"
+
+--alias audio "-f ba -x --tagged --paths home:~/Music -o '%(title)s.%(ext)s'"
+
+--alias flac "-f ba -x --audio-format flac --audio-quality 0 --tagged --paths home:~/Music -o '%(title)s.%(ext)s'"
+
+--alias music "-f ba -x --audio-format opus --audio-quality 0 --tagged --paths home:~/Music -o '%(artist,uploader)s/%(title)s.%(ext)s'"
+
+--alias clip "--download-sections *{0}-{1} --force-keyframes-at-cuts --paths home:~/Videos"
+
+--alias sub "--write-subs --write-auto-subs --sub-langs en.* --convert-subs srt"

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Pin the current bar as the one to keep. The post-update hook
+# ~/.config/omarchy/hooks/post-update.d/keep-my-waybar restores it whenever an
+# Omarchy update edits ~/.config/waybar.
+
+set -e
+
+PINNED="$HOME/.config/omarchy/pinned/waybar"
+LIVE="$HOME/.config/waybar"
+
+mkdir -p "$PINNED"
+cp -a "$LIVE/config.jsonc" "$LIVE/style.css" "$PINNED/"
+
+echo "Pinned $LIVE/{config.jsonc,style.css} → $PINNED"

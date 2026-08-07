@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Toggle a named special workspace, launching what belongs in it the first time.
+#
+#   scratchpad term                 a bare terminal, over whatever you are doing
+#   scratchpad music kew            a terminal running kew
+#   scratchpad notes -- obsidian    a window that is not a terminal
+#
+# A special workspace floats above the current one and leaves it untouched, so
+# whatever is in here keeps running when you dismiss it.
+
+set -e
+
+name="$1"
+shift || true
+
+occupied() {
+  hyprctl clients -j | jq -e --arg w "special:$name" 'any(.[]; .workspace.name == $w)' >/dev/null
+}
+
+launch() {
+  local rule="[workspace special:$name silent]"
+
+  if [[ ${1-} == "--" ]]; then
+    shift
+    hyprctl dispatch exec "$rule $*"
+  else
+    hyprctl dispatch exec "$rule ${TERMINAL:-alacritty} ${*:+-e $*}"
+  fi
+
+  for _ in {1..60}; do
+    occupied && return 0
+    sleep 0.05
+  done
+}
+
+occupied || launch "$@"
+hyprctl dispatch togglespecialworkspace "$name"

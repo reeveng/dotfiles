@@ -1,0 +1,110 @@
+# What each menu entry does, in words someone new to Omarchy would use.
+# One line per entry: the path (no icon), a tab, then the description.
+# Everyday words belong in here too, since the launcher matches the whole line:
+# typing "sound", "internet" or "print screen" should find the right row.
+#
+# Entries with no line here fall back to Omarchy's own summary for the command
+# they run, or to a description built from the path.
+
+Apps	launch an application you have installed
+Learn	manuals and cheatsheets for Omarchy, Hyprland, Arch, Neovim, Bash
+Trigger	do something now: reminders, capture, sharing, toggles, hardware
+Style	how the desktop looks: theme, font, wallpaper, screensaver
+Setup	configure the machine: audio, wifi, bluetooth, monitors, defaults, config files
+Install	add software: packages, dev tools, editors, browsers, games, fonts
+Remove	uninstall software you added
+Update	update Omarchy, restart services, set the clock, change passwords
+About	what this machine is running
+System	lock, suspend, log out, restart, shut down
+
+Setup › Audio	sound output, input and volume: speakers, microphone, mixer
+Setup › Wifi	join a wireless network: internet, wlan, hotspot
+Setup › Bluetooth	pair and connect bluetooth devices: headphones, speakers, mouse
+Setup › Power Profile	power saver, balanced or performance: battery life, fan noise
+Setup › Monitors	edit the display config: screens, resolution, refresh rate, position
+Setup › Keybindings	edit your keyboard shortcuts: hotkeys, binds, super key
+Setup › Input	keyboard layout, key repeat and touchpad behaviour: mouse, trackpad
+Setup › DNS	choose which DNS resolver the machine uses
+Setup › Security › Fingerprint	log in with your fingerprint reader
+Setup › Security › Fido2	log in with a hardware key: yubikey, passkey
+
+Trigger › Reminder › Set one	notify me in a few minutes: timer, alarm
+Trigger › Capture › Screenshot	grab a region, a window or the whole screen: print screen, screengrab
+Trigger › Capture › Text Extraction	read text off the screen into your clipboard: OCR, copy from an image
+Trigger › Capture › Color	pick a colour from anywhere on screen: eyedropper, hex code
+Trigger › Transcode	convert a video or image to another format: compress, ffmpeg
+Trigger › Share › Clipboard	put what you copied on a link others can open: upload, send
+Trigger › Share › File	put a file on a link others can open: upload, send
+Trigger › Share › Folder	put a folder on a link others can open: upload, send
+Trigger › Toggle › Screensaver	turn the idle screensaver on or off
+Trigger › Toggle › Nightlight	warm the screen colours at night: blue light filter, f.lux
+Trigger › Toggle › Idle Lock	stop the screen locking itself while you are away: keep awake, caffeine
+Trigger › Toggle › Notifications	silence notifications: do not disturb, mute popups
+Trigger › Toggle › Top Bar	show or hide waybar: status bar, panel, tray
+Trigger › Toggle › Workspace Layout	switch between the tiling layouts: master, dwindle
+Trigger › Toggle › Window Gaps	space between windows, or none: padding, density
+Trigger › Toggle › 1-Window Ratio	give a lone window a square shape instead of full width
+Trigger › Toggle › Monitor Scaling	cycle display scaling: hidpi, zoom, everything bigger or smaller
+Trigger › Toggle › Direct Boot	boot straight in without stopping at the boot menu
+Trigger › Toggle › Passwordless Sudo	stop sudo asking for your password
+Trigger › Hardware › Laptop Display	turn the built-in laptop screen off or back on
+Trigger › Hardware › Mirror Display	show the same picture on every screen: duplicate, presenting
+Trigger › Hardware › Touchpad	turn the touchpad off or back on: trackpad
+Trigger › Hardware › Touchscreen	turn the touchscreen off or back on
+
+Style › Theme	switch the system colour theme: dark mode, light mode, colours
+Style › Unlock	themes you have not unlocked yet
+Style › Font	change the system font: typeface, size, ligatures
+Style › Background	change the wallpaper: desktop picture, background image
+Style › Hyprland	edit gaps, borders, rounding and animations by hand
+Style › About	the text and picture on your About screen
+Style › Screensaver	the text and picture your screensaver shows
+
+Install › Package	install software from the Arch repos: pacman, apps, programs
+Install › AUR	install software built from the AUR: yay, community packages
+Install › Web App	turn a website into its own app window: pwa, shortcut
+Install › TUI	install a terminal application
+Install › Style › Theme	install a theme from a git repo
+Install › Style › Background	add your own wallpapers to the current theme
+Install › Service › Tailscale	private network between your machines: vpn, mesh
+Install › Service › NordVPN [AUR]	commercial vpn client
+Install › Service › Bitwarden	password manager: vault, logins
+Install › Windows	run Windows in a virtual machine: vm, dual boot alternative
+
+Remove › Preinstalls	remove the applications Omarchy shipped with
+
+Update › Omarchy	pull the latest Omarchy and run its migrations: system update, upgrade
+Update › Channel	which release stream to follow: stable, rc, edge, dev
+Update › Extra Themes	update the themes you installed yourself
+Update › Firmware	update device firmware: bios, drivers
+Update › Timezone	change which timezone the clock is in
+Update › Time	resync the clock from the network
+Update › Password › Drive Encryption	change the disk encryption passphrase: luks
+Update › Password › User	change your login password
+
+System › Screensaver	start the screensaver now
+System › Lock	lock the screen now
+System › Suspend	sleep, keeping everything open
+System › Hibernate	sleep to disk, using no power
+System › Logout	end the session and return to the login screen
+System › Restart	reboot the machine
+System › Shutdown	power the machine off
+
+Learn › Keybindings	the list of every keyboard shortcut on this machine
+Trigger › Reminder › Show all	list the reminders you have set
+Trigger › Reminder › Clear all	cancel every reminder
+Trigger › Capture › Screenrecord › With no audio	record the screen silently: screencast, video
+Trigger › Capture › Screenrecord › With desktop audio	record the screen with the sound it is playing
+Trigger › Capture › Screenrecord › With desktop + microphone audio	record the screen with its sound and your voice
+Trigger › Capture › Screenrecord › With desktop + microphone audio + webcam	record the screen, its sound, your voice and your camera
+Trigger › Hardware › Hybrid GPU	switch between the built-in and the dedicated graphics card
+Style › Screensaver › Edit Text	type the text your screensaver shows
+Style › Screensaver › Set From Image	use a picture as the screensaver instead of text
+Style › Screensaver › Restore Default	put Omarchy's own screensaver back
+Style › About › Edit Text	type the text your About screen shows
+Style › About › Set From Image	use a picture on the About screen instead of text
+Style › About › Restore Default	put Omarchy's own About screen back
+Setup › System Sleep › Enable Suspend	let the machine sleep again
+Setup › System Sleep › Disable Suspend	stop the machine sleeping: keep running, servers
+Setup › System Sleep › Enable Hibernate	sleep to disk, which needs swap set up first
+Setup › System Sleep › Disable Hibernate	remove hibernation and the swap it needed

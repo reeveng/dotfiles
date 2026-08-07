@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Omarchy shouts at 10%, which is late. This is the earlier, quieter word.
+# One notification per discharge; plugging in arms it again.
+
+THRESHOLD="${BATTERY_EARLY_THRESHOLD:-20}"
+FLAG="/run/user/$UID/battery_early_warned"
+
+level=$(omarchy-battery-remaining 2>/dev/null)
+state=$(upower -i "$(upower -e | grep BAT | head -1)" 2>/dev/null | awk '/state/ {print $2}')
+
+[[ $level =~ ^[0-9]+$ ]] || exit 0
+
+if [[ $state == "discharging" ]] && ((level <= THRESHOLD)); then
+  [[ -f $FLAG ]] && exit 0
+  notify-send -u normal "󰁻  Battery at ${level}%" "Somewhere to plug in would be good" -i battery-low -t 15000
+  touch "$FLAG"
+else
+  rm -f "$FLAG"
+fi

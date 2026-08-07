@@ -1,0 +1,11 @@
+[Unit]
+Description=Check the battery every minute
+Requires=battery-early-warning.service
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=20sec
+
+[Install]
+WantedBy=timers.target

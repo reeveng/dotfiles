@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# While OBS is streaming: notifications stay quiet and the screen does not lock
+# itself. When the stream ends, or OBS dies, both go back exactly as they were.
+#
+# The stream state comes from the "==== Streaming Start/Stop ====" banners OBS
+# writes to its session log, the same source the waybar dot uses.
+
+LOGS="${OBS_LOG_DIR:-$HOME/.config/obs-studio/logs}"
+INTERVAL="${OBS_WATCH_INTERVAL:-2}"
+
+silenced=0
+idle_held=0
+live=0
+
+streaming() {
+  pgrep -x obs >/dev/null || return 1
+  local log last
+  log=$(ls -t "$LOGS"/*.txt 2>/dev/null | head -1)
+  last=$(grep -h "==== Streaming \(Start\|Stop\)" "$log" 2>/dev/null | tail -1)
+  [[ $last == *"Streaming Start"* ]]
+}
+
+hold() {
+  notify-send -u low "󰑋  Live" "Notifications silenced, screen will not lock"
+
+  if ! makoctl mode | grep -q "do-not-disturb"; then
+    makoctl mode -a do-not-disturb >/dev/null && silenced=1
+  fi
+
+  if pgrep -x hypridle >/dev/null; then
+    pkill -x hypridle && idle_held=1
+  fi
+
+  pkill -RTMIN+9 waybar
+  pkill -RTMIN+10 waybar
+}
+
+release() {
+  ((silenced)) && makoctl mode -r do-not-disturb >/dev/null
+  ((idle_held)) && uwsm-app -- hypridle >/dev/null 2>&1 &
+  silenced=0
+  idle_held=0
+
+  pkill -RTMIN+9 waybar
+  pkill -RTMIN+10 waybar
+  notify-send -u low "󰑋  Stream ended" "Notifications and idle lock are back"
+}
+
+trap 'release; exit 0' TERM INT
+
+while true; do
+  if streaming; then
+    ((live)) || {
+      hold
+      live=1
+    }
+  elif ((live)); then
+    release
+    live=0
+  fi
+  sleep "$INTERVAL"
+done

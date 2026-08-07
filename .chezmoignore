@@ -24,7 +24,18 @@ nautilus/
 dconf/
 user-dirs.*
 systemd/
+!systemd/user/battery-early-warning.*
 uwsm/
 environment.d/
 Typora/
 
+# ====== Local state, not configuration ======
+omarchy/current/
+omarchy/pinned/
+omarchy/backgrounds/
+omarchy/branding/
+
+# ====== Backups, which are not worth sharing ======
+*.bak
+*.bak.*
+*.old

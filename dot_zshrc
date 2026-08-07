@@ -1,3 +1,23 @@
+# If not running interactively, don't do anything
+[[ $- != *i* ]] && return
+
+# Load omarchy-zsh configuration
+if [[ -d /usr/share/omarchy-zsh/conf.d ]]; then
+  for config in /usr/share/omarchy-zsh/conf.d/*.zsh; do
+    [[ -f "$config" ]] && source "$config"
+  done
+fi
+
+# Load omarchy-zsh functions and aliases
+if [[ -d /usr/share/omarchy-zsh/functions ]]; then
+  for func in /usr/share/omarchy-zsh/functions/*.zsh; do
+    [[ -f "$func" ]] && source "$func"
+  done
+fi
+
+# Add your own customizations below
+
+
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
@@ -73,6 +93,7 @@ ZSH_THEME="robbyrussell"
 plugins=(
   git
   mix
+  mix-fast
   archlinux
   starship
   thefuck
@@ -147,3 +168,12 @@ scan() {
 }
 
 eval "$(starship init zsh)"
+
+
+if [ -e /home/jmad/.nix-profile/etc/profile.d/nix.sh ]; then . /home/jmad/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
+eval "$(direnv hook zsh)"
+export PATH="$HOME/.local/bin:$PATH"
+
+# cat, with syntax highlighting, and still just cat: no pager, no line numbers,
+# no headers. `command cat` when a script wants the plain thing.
+alias cat='bat --paging=never --style=plain'

@@ -1,0 +1,6 @@
+[Unit]
+Description=Warn once when the battery gets low, before Omarchy's critical alert
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/battery-early-warning
