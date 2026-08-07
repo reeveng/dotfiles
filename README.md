@@ -85,6 +85,24 @@ draws the cover in the terminal.
 - **cat** is `bat`, without the pager or the line numbers. `command cat` for the
   plain one.
 
+## The logo
+
+`omarchy/branding/screensaver.txt` is the reeven mark the screensaver shows in
+place of Omarchy's own. `about.txt` beside it is still Omarchy's and is not
+checked in, so an update is free to change it.
+
+The file is cropped to its own ink, with no blank rows or columns around it, and
+it has to stay that way. `tte` centres the text it is handed, but it counts
+leading blank columns while stripping trailing ones, so padding on the left
+pushes the logo right by half of it. This mark was transcoded from an image that
+carried a margin, which left twenty five blank columns and sat the logo a good
+twelve columns right of centre on every lock. Omarchy's own `about.txt` is
+cropped the same way, which is the tell.
+
+Transcoding keeps whatever margin the source image had, so after
+`omarchy branding screensaver image` run `just logo` to crop it back. Running it
+twice is harmless.
+
 ## The session
 
 `hyprsession` has no config file of its own. It is configured entirely by the

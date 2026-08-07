@@ -8,6 +8,39 @@ packages:
         > .chezmoidata/packages.json
     @echo "packages.json rebuilt; run 'chezmoi apply' to catch the machine up."
 
+# Crop the screensaver logo to its own ink.
+#
+# tte centres what it is given, and it counts leading blank columns and rows as
+# part of the text while stripping trailing ones. Padding on the left therefore
+# pushes the logo right by half that padding. Transcoding an image keeps
+# whatever margin the image had, so run this after
+# `omarchy branding screensaver image`.
+logo path="~/.config/omarchy/branding/screensaver.txt":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    file={{ path }}
+    awk '
+      { line[NR] = $0
+        for (i = 1; i <= length($0); i++)
+          if (substr($0, i, 1) != " ") {
+            if (!minc || i < minc) minc = i
+            if (i > maxc) maxc = i
+            if (!minr) minr = NR
+            maxr = NR
+          }
+      }
+      END {
+        if (!minr) exit
+        for (r = minr; r <= maxr; r++) {
+          out = substr(line[r], minc, maxc - minc + 1)
+          sub(/[ \t]+$/, "", out)
+          print out
+        }
+      }
+    ' "$file" > "$file.cropped"
+    mv "$file.cropped" "$file"
+    awk 'END { print "logo is now " NR " rows" }' "$file"
+
 # Packages this machine has explicitly installed that neither Omarchy nor
 # packages.nix accounts for. Anything listed here is something you installed
 # by hand and have not written down yet.
