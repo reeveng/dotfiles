@@ -5,7 +5,7 @@ Before=shutdown.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/hyprsession --mode save-and-exit
+ExecStart=/usr/bin/hyprsession save
 
 [Install]
 WantedBy=shutdown.target

@@ -115,7 +115,7 @@ flags it is started with and by when it is asked to run, which is three places:
 | Where | What |
 | --- | --- |
 | `hypr/autostart.conf` | `exec-once = hyprsession --save-interval 120` restores the last session at login, then writes a new one every two minutes |
-| `hypr/autostart.conf` | `exec-shutdown = hyprsession --mode save-and-exit` catches a clean Hyprland exit |
+| `hypr/autostart.conf` | `exec-shutdown = hyprsession save` catches a clean Hyprland exit |
 | `systemd/user/hyprsession-save.service` | catches the case `exec-shutdown` misses, when the machine goes down without Hyprland getting to quit |
 
 The unit is a belt beside that brace. Hyprland only runs `exec-shutdown` when it

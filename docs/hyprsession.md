@@ -48,12 +48,23 @@ Omarchy's does by default.
 Directly under it:
 
 ```conf
-exec-shutdown = hyprsession --mode save-and-exit
+exec-shutdown = hyprsession save
 ```
 
 `exec-shutdown` fires when Hyprland quits in an orderly way, so logging out saves
 the desktop as it was at that instant rather than as it was up to two minutes
 ago.
+
+The mode is a bare word in that position. Most writing about hyprsession, this
+file included until recently, spells it `--mode save-and-exit`, and that form is
+worse than a typo would be. 0.2.0 moved the mode out of a flag; 0.2.1 keeps the
+flag alive by checking for the string `--mode` anywhere in the arguments and, on
+finding it, handing the entire run to the pre-0.2.0 code. That code predates
+named sessions. It saves to `~/.local/share/hyprsession` itself rather than to
+the `default` directory beneath it, and startup only ever reads `default`. So the
+save runs, reports nothing wrong, and lands where nothing will look for it. Steps
+2 and 3 both go quiet at once, which is what a session that half works is made
+of.
 
 ## Step 3: save when nothing exits cleanly
 
@@ -75,7 +86,7 @@ Before=shutdown.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/hyprsession --mode save-and-exit
+ExecStart=/usr/bin/hyprsession save
 
 [Install]
 WantedBy=shutdown.target
@@ -149,8 +160,11 @@ The automatic one is called `default`. You can keep others on purpose:
 ```bash
 hyprsession save writing     # keep the current layout under a name
 hyprsession list             # what has been kept
-hyprsession --mode load writing
+hyprsession load writing     # put it back
 ```
+
+Mode first, then the name. Leaving the name off means `default`, which is why
+step 2 needs no argument beyond `save`.
 
 Useful for a layout you return to rather than one you happen to have.
 
@@ -163,8 +177,9 @@ a window was on, but window rules run at open time and can move it again. Check
 **Some applications never come back.** It restores a window by rerunning the
 command that made it, read from `hyprctl clients`. Anything launched by a
 desktop file with a wrapper, or by a portal, may report a command that does not
-relaunch it. `hyprsession --mode command` exists for teaching it the special
-cases.
+relaunch it. `hyprsession command <class> "<command>"` exists for teaching it the
+special cases, and writes a small script into `~/.local/bin` that runs the right
+thing.
 
 **Everything comes back twice.** Something else is also restoring the session,
 usually a second `exec-once` left over from an older config. Check
