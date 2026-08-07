@@ -1,0 +1,11 @@
+[Unit]
+Description=Save Hyprland session before shutdown
+DefaultDependencies=no
+Before=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/hyprsession --mode save-and-exit
+
+[Install]
+WantedBy=shutdown.target

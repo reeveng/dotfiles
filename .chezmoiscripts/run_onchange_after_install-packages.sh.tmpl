@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+#
+# Brings the machine up to what .chezmoidata/packages.yaml describes.
+#
+# chezmoi renders this template with the manifest baked in, so the script's
+# own text changes whenever the manifest does, and only then does chezmoi run
+# it again. An apply that changes no packages costs one pacman query.
+
+set -euo pipefail
+
+packages=(
+{{- range $group := .packages.enabled }}
+  # {{ $group }}
+{{- range (index $.packages.groups $group) }}
+  {{ . }}
+{{- end }}
+{{ end -}}
+)
+
+if ! command -v yay >/dev/null 2>&1; then
+  echo "packages: yay is not installed, so nothing can be fetched." >&2
+  echo "packages: install it first, then run 'chezmoi apply'." >&2
+  exit 1
+fi
+
+missing=()
+for package in "${packages[@]}"; do
+  pacman -Qq "$package" >/dev/null 2>&1 || missing+=("$package")
+done
+
+if [[ ${#missing[@]} -eq 0 ]]; then
+  echo "packages: all ${#packages[@]} are already here."
+  exit 0
+fi
+
+echo "packages: ${#missing[@]} of ${#packages[@]} are missing:"
+printf '  %s\n' "${missing[@]}"
+
+if yay -S --needed --noconfirm -- "${missing[@]}"; then
+  echo "packages: done."
+  exit 0
+fi
+
+# A single name that no longer resolves takes the whole batch down with it.
+# Go back through one at a time so the rest still land, and say which ones
+# could not be found rather than failing the apply.
+echo "packages: the batch failed, retrying one at a time." >&2
+unresolved=()
+for package in "${missing[@]}"; do
+  yay -S --needed --noconfirm -- "$package" || unresolved+=("$package")
+done
+
+if [[ ${#unresolved[@]} -gt 0 ]]; then
+  echo "packages: could not install:" >&2
+  printf '  %s\n' "${unresolved[@]}" >&2
+  echo "packages: they may have been renamed or dropped; edit the manifest." >&2
+fi

@@ -75,7 +75,8 @@ draws the cover in the terminal.
   while it is out of sight. `hypr/scripts/scratchpad` launches what belongs in
   each one the first time you ask for it.
 - **Session.** `hyprsession` saves the window layout as you work and puts it back
-  at login, so a restart returns the desktop you left.
+  at login, so a restart returns the desktop you left. It has no config file;
+  see below for the whole of it.
 - **Battery.** Omarchy shouts at 10%. `battery-early-warning` says something
   quieter at 20%, once per discharge, through a systemd user timer.
 - **Keys.** Hyprland runs *every* binding on a key, so anything that overrides a
@@ -84,12 +85,77 @@ draws the cover in the terminal.
 - **cat** is `bat`, without the pager or the line numbers. `command cat` for the
   plain one.
 
+## The session
+
+`hyprsession` has no config file of its own. It is configured entirely by the
+flags it is started with and by when it is asked to run, which is three places:
+
+| Where | What |
+| --- | --- |
+| `hypr/autostart.conf` | `exec-once = hyprsession --save-interval 120` restores the last session at login, then writes a new one every two minutes |
+| `hypr/autostart.conf` | `exec-shutdown = hyprsession --mode save-and-exit` catches a clean Hyprland exit |
+| `systemd/user/hyprsession-save.service` | catches the case `exec-shutdown` misses, when the machine goes down without Hyprland getting to quit |
+
+The unit is a belt beside that brace. Hyprland only runs `exec-shutdown` when it
+exits in an orderly way, so a reboot from outside the session would otherwise
+lose up to two minutes of layout. The unit runs `Before=shutdown.target` with
+`DefaultDependencies=no`, which puts it early enough to still see the windows.
+
+Enabling it is usually `systemctl --user enable`, which just writes a symlink
+into `shutdown.target.wants`. That symlink is checked in, so the unit arrives
+enabled and no one has to remember the command. The battery timer is enabled the
+same way.
+
+State lives in `~/.local/share/hyprsession/default`: `clients.json` is what was
+open, `exec.conf` is the Hyprland config generated to put it back. Neither is
+checked in, since a saved desktop belongs to a machine and not to a repository.
+`hyprsession list` shows saved sessions, and `hyprsession save <name>` keeps one
+by name if you want a layout you can return to on purpose.
+
 ## What has to be installed
 
-Omarchy brings most of it. These are extra:
+Omarchy brings most of it. Everything past that is `packages.nix`, which is the
+only place it is written down:
 
 ```bash
-omarchy pkg add hyprsession kew yt-dlp bat jq mpv wofi
+$EDITOR packages.nix     # add a name to a group
+just packages            # compile it
+chezmoi apply            # catch the machine up
+```
+
+Packages sit in groups, and `enabled` at the top picks which groups this machine
+wants. Off by default are `hardware`, `printing` and `video-editing`, which
+describe this desk rather than my taste: an AMD laptop's kernel and drivers, the
+Brother DCP-7030, and the libraries Arch stopped shipping that DaVinci Resolve
+still asks for. They stay written down so that rebuilding *this* machine is one
+edit away. Another machine says which groups it wants in its own
+`~/.config/chezmoi/chezmoi.toml`, which outranks the manifest:
+
+```toml
+[data.packages]
+  enabled = ["browsers", "cli", "dev", "fonts", "shell"]
+```
+
+`just packages` evaluates the nix and writes `.chezmoidata/packages.json`. Both
+files are committed, and the compiled one is what chezmoi actually reads. That
+is what lets a bare machine install everything without nix being there first,
+which matters because nix is itself in the list. Editing needs nix; installing
+does not.
+
+The installer asks pacman what is already present and fetches only the
+difference, so an apply that changes nothing costs one query, and it only reruns
+when the manifest changes. To make it run anyway, say `chezmoi state
+delete-bucket --bucket=entryState` and apply again. Removing a name does not
+remove the package; say `yay -Rns` for that.
+
+`just drift` names anything installed by hand that neither Omarchy nor
+`packages.nix` accounts for. It should print nothing.
+
+A fresh machine, from nothing:
+
+```bash
+omarchy pkg add chezmoi          # if Omarchy has not already
+chezmoi init --apply reeveng     # dotfiles and packages in one pass
 ```
 
 `obs-studio` only if you want the stream indicator to ever light up. `python3` is
