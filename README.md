@@ -42,6 +42,10 @@ rebuilds itself whenever that file changes; descriptions come from
 `menu-hints.tsv`, from the path, or from each command's own summary line. A row
 at the bottom turns the descriptions off.
 
+It works on any Omarchy machine and needs no patching, because Omarchy sources
+user extensions itself. [`docs/menu.md`](docs/menu.md) is the walkthrough for
+putting it on someone else's.
+
 ## Streaming
 
 `waybar-obs` puts a dot on the bar: red while OBS is streaming, grey while OBS is
@@ -129,6 +133,9 @@ open, `exec.conf` is the Hyprland config generated to put it back. Neither is
 checked in, since a saved desktop belongs to a machine and not to a repository.
 `hyprsession list` shows saved sessions, and `hyprsession save <name>` keeps one
 by name if you want a layout you can return to on purpose.
+
+[`docs/hyprsession.md`](docs/hyprsession.md) sets all of it up step by step,
+including how to prove each of the three saves actually fires.
 
 ## What has to be installed
 
