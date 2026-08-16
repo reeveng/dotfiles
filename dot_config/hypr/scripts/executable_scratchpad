@@ -8,6 +8,9 @@
 #
 # A special workspace floats above the current one and leaves it untouched, so
 # whatever is in here keeps running when you dismiss it.
+#
+# hyprctl dispatch takes Lua now, so the window rule is an argument to
+# hl.dsp.exec_cmd rather than a bracketed prefix on the command string.
 
 set -e
 
@@ -18,15 +21,21 @@ occupied() {
   hyprctl clients -j | jq -e --arg w "special:$name" 'any(.[]; .workspace.name == $w)' >/dev/null
 }
 
+lua_string() {
+  printf '"%s"' "${1//\"/\\\"}"
+}
+
 launch() {
-  local rule="[workspace special:$name silent]"
+  local command
 
   if [[ ${1-} == "--" ]]; then
     shift
-    hyprctl dispatch exec "$rule $*"
+    command="$*"
   else
-    hyprctl dispatch exec "$rule ${TERMINAL:-alacritty} ${*:+-e $*}"
+    command="${TERMINAL:-alacritty} ${*:+-e $*}"
   fi
+
+  hyprctl dispatch "hl.dsp.exec_cmd($(lua_string "$command"), { workspace = $(lua_string "special:$name silent") })"
 
   for _ in {1..60}; do
     occupied && return 0
@@ -35,4 +44,4 @@ launch() {
 }
 
 occupied || launch "$@"
-hyprctl dispatch togglespecialworkspace "$name"
+hyprctl dispatch "hl.dsp.workspace.toggle_special($(lua_string "$name"))"
