@@ -1,9 +1,9 @@
 # Setting up hyprsession
 
 Hyprsession remembers which windows were open, on which workspace, and puts them
-back when Hyprland next starts. There is no config file. You configure it
-entirely by choosing when it runs, which is three separate moments, and the third
-one is the one people miss.
+back when Hyprland next starts. One line starts it and it does the rest from
+there: it watches the windows and keeps the saved session current, so there is no
+moment at which the desktop still has to be photographed.
 
 Everything below is already in this repo. Follow it to understand what
 `chezmoi apply` did for you, or to set it up somewhere the repo is not.
@@ -29,137 +29,126 @@ Check it is there:
 
 ```bash
 hyprsession --help | head -1
-pacman -Q hyprsession            # 1:0.2.1-1, the epoch says it is the fork
+pacman -Q hyprsession            # 1:0.2.1-3, the epoch says it is the fork
 ```
 
-## Step 1: restore at login, and keep saving
+## Step 1: restore at login, and keep the session current
 
 Put this in `~/.config/hypr/autostart.lua`, inside the `hyprland.start` handler:
 
 ```lua
-hl.exec_cmd("hyprsession --save-interval 120")
+hl.exec_cmd(
+  "mv -f ~/.local/state/hyprsession.log ~/.local/state/hyprsession.log.1 2>/dev/null;"
+    .. " exec hyprsession --save-interval 120 >~/.local/state/hyprsession.log 2>&1"
+)
 ```
 
 One line does two jobs. On startup it reads the last saved session and reopens
-those windows. Then it stays running and writes a fresh save every 120 seconds.
+those windows. Then it stays running and keeps the file on disk in step with what
+is on screen: a window that opens, moves, floats or goes fullscreen is written
+down within a second, and a window that closes after fifteen quiet seconds.
 
-The interval is a trade. Save often and you lose less when the machine dies
-badly; save rarely and you spend less time asking `hyprctl` what is open. The
-default is 60. Two minutes is comfortable.
+`--save-interval` is what is left for the timer, which is now only there for what
+changes inside a window rather than to it. A shell that changes directory and an
+editor that opens a file raise no Hyprland event, so two minutes is how stale
+that part of the record can get.
+
+The redirection is not decoration. Hyprland throws away whatever the programs it
+launches print, so the one program that can say why a window did not come back
+has to keep its own log. The previous boot's is left next to it as `.log.1`,
+which is the copy you want when the question is what happened last time.
 
 Omarchy's `hyprland.lua` reaches this file through `require("hypr.autostart")`.
 An `autostart.conf` beside it is read by nobody. Hyprland picks one config
 language per session and this one is Lua.
 
-## Step 2: save when Hyprland exits cleanly
+## Step 2: do not save on the way out
 
-In the `hyprland.shutdown` handler of the same file:
+There is nothing to add for shutdown, and anything added there makes things
+worse. This machine used to have two such saves, a `hyprland.shutdown` handler
+and a systemd unit ordered `Before=shutdown.target`. Both are gone.
 
-```lua
-hl.exec_cmd("hyprsession save")
+Logging out kills what `app-graphical.slice` holds a second or two before the
+compositor stops. Every window opened from the launcher or a keybinding lives in
+that slice, so by the time either save runs, the window list it reads has already
+lost them, and what it writes goes over a good session. The systemd unit had it
+worse still: by `shutdown.target` Hyprland itself is gone, so the save cannot
+even ask what was open.
+
+```
+15:03:30.779  app-signal-8390.scope: Consumed ...          <- signal gone
+15:03:31.131  app-Hyprland-gtk\x2dlaunch-29e2348d.scope    <- librewolf gone
+15:03:32.741  Stopped target Current graphical user session
+15:03:32.946  Stopped Main service for Hyprland            <- only now
 ```
 
-`hyprland.shutdown` fires when Hyprland quits in an orderly way, so logging out
-saves the desktop as it was at that instant rather than as it was up to two
-minutes ago.
+Saving from the events instead means the file on disk is already right when that
+sequence starts, and hyprsession dying with the compositor is exactly what should
+happen. The fifteen quiet seconds a closing window waits for are longer than the
+whole teardown, so the losses of a logout are never written down. A desktop with
+nothing on it is never written down either, whoever asks.
 
-The mode is a bare word in that position. Most writing about hyprsession, this
-file included until recently, spells it `--mode save-and-exit`, and that form is
-worse than a typo would be. 0.2.0 moved the mode out of a flag; 0.2.1 keeps the
-flag alive by checking for the string `--mode` anywhere in the arguments and, on
-finding it, handing the entire run to the pre-0.2.0 code. That code predates
-named sessions. It saves to `~/.local/share/hyprsession` itself rather than to
-the `default` directory beneath it, and startup only ever reads `default`. So the
-save runs, reports nothing wrong, and lands where nothing will look for it. Steps
-2 and 3 both go quiet at once, which is what a session that half works is made
-of.
+## The mode is a bare word
 
-## Step 3: save when nothing exits cleanly
+`hyprsession save`, not `hyprsession --mode save-and-exit`. Most writing about
+hyprsession, this file included until recently, spells it the second way, and
+that form is worse than a typo would be. 0.2.0 moved the mode out of a flag;
+0.2.1 keeps the flag alive by checking for the string `--mode` anywhere in the
+arguments and, on finding it, handing the entire run to the pre-0.2.0 code. That
+code predates named sessions. It saves to `~/.local/share/hyprsession` itself
+rather than to the `default` directory beneath it, and startup only ever reads
+`default`. So the save runs, reports nothing wrong, and lands where nothing will
+look for it.
 
-This is the step that gets skipped, and skipping it is why sessions feel like
-they half work.
+## What a terminal brings back with it
 
-`exec-shutdown` only runs when Hyprland gets the chance. Reboot from a TTY, let
-systemd time out a unit, or lose power to a laptop that suspended badly, and
-Hyprland never reaches its own shutdown path. Whatever the last periodic save
-caught is what you get back.
+A terminal's own command line says where it was told to start, once, and nothing
+about the shell inside it. Saving only that line gave back an empty prompt in the
+home directory, however far into a project the window had got. Its process tree
+knows the rest, so that is where the line now comes from:
 
-Write `~/.config/systemd/user/hyprsession-save.service`:
-
-```ini
-[Unit]
-Description=Save Hyprland session before shutdown
-DefaultDependencies=no
-Before=shutdown.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/hyprsession save
-
-[Install]
-WantedBy=shutdown.target
+```
+[... workspace 2 silent ...] foot --working-directory=/home/jmad/Documents/projects/codincod \
+  -e /usr/bin/zsh -i -c 'nvim lib/foo.ex; exec /usr/bin/zsh -i'
 ```
 
-Two lines in there are doing real work. `Before=shutdown.target` puts the save
-ahead of the shutdown itself, and `DefaultDependencies=no` keeps systemd from
-adding the ordinary ordering that would otherwise schedule this unit after the
-session it is trying to photograph. Without both, it runs too late to see any
-windows and saves an empty desktop over your good one.
+The directory is where the shell actually was. The program is whatever held the
+terminal's foreground when the session was saved. It comes back through the shell
+that ran it, so quitting nvim leaves a prompt in the project rather than closing
+the window, and that shell reads `.zshrc` on the way in, which is what keeps
+mise's path in front of the one the compositor was started with.
 
-## Step 4: enable it
+Every program found in the foreground is started again bar a short list, because
+a half finished `sudo pacman -Syu` asking for a password at login is worse than a
+terminal that comes back empty. To decide that list yourself, write one program
+name per line in `~/.config/hyprsession/never-resume`. That file replaces the
+built in list rather than adding to it, so an empty file means everything comes
+back.
+
+## Prove it works
+
+**The record is current.** Open something distinctive and look straight away,
+without waiting for any interval:
 
 ```bash
-systemctl --user enable hyprsession-save.service
+grep -c . ~/.local/share/hyprsession/default/exec.conf
+tail -3 ~/.local/state/hyprsession.log
 ```
 
-All that command does is write a symlink:
+The new window should already be a line in `exec.conf`, and the log should say it
+saved. A window that appears in neither is one that will not come back.
 
-```
-~/.config/systemd/user/shutdown.target.wants/hyprsession-save.service
-  -> ~/.config/systemd/user/hyprsession-save.service
-```
+**A saved line really relaunches.** Take a line out of `exec.conf`, drop the
+`[...]` prefix, and run the rest in a terminal. This is the fastest way to catch
+an application whose command does not restart it, because it fails in front of
+you instead of at login.
 
-Which is why this repo checks the symlink in rather than asking you to remember
-the command. If you are following along by hand, run the command. If you ran
-`chezmoi apply`, it is already there and enabled.
-
-Confirm:
+**The whole round trip.** Log out and back in. What did not come back is in the
+log, next to the line hyprsession tried:
 
 ```bash
-systemctl --user is-enabled hyprsession-save.service   # enabled
+grep -E "Sending|Warning|not in the saved" ~/.local/state/hyprsession.log.1
 ```
-
-## Step 5: prove each path works
-
-Three moments, three checks. Do them in order.
-
-**The periodic save.** Open something distinctive, wait past your interval, then
-look at what was written:
-
-```bash
-ls -l ~/.local/share/hyprsession/default/
-grep -c exec ~/.local/share/hyprsession/default/exec.conf
-```
-
-`clients.json` is what was open. `exec.conf` is the Hyprland config generated to
-put it back. A recent mtime on both means the timer is running.
-
-**The clean exit.** Log out and back in. Your windows should return. If they do
-not, the `hyprland.shutdown` handler is not firing, and the usual cause is that
-`autostart.lua` is not required from `hyprland.lua`.
-
-**The unpleasant exit.** This is the one worth testing deliberately, because it
-is the one that silently does nothing:
-
-```bash
-touch ~/.local/share/hyprsession/default/clients.json   # note the time
-sudo reboot
-```
-
-After logging back in, check the mtime on `clients.json`. If it is later than
-your `touch` and later than the last periodic save, the unit ran. If it matches
-the last periodic save instead, the unit is not enabled or not ordered early
-enough.
 
 ## Named sessions
 
@@ -171,8 +160,11 @@ hyprsession list             # what has been kept
 hyprsession load writing     # put it back
 ```
 
-Mode first, then the name. Leaving the name off means `default`, which is why
-step 2 needs no argument beyond `save`.
+Mode first, then the name. Leaving the name off means `default`.
+
+`hyprsession watch` is the running half without the loading half, for a session
+that is already on screen. It is what to start after installing a new build,
+because the ordinary mode would clear the desktop and put it back first.
 
 Useful for a layout you return to rather than one you happen to have.
 
@@ -199,10 +191,12 @@ stopped happening at all.
 It fails silently because of where the error lands. The first thing a restore
 does is dispatch the commands in `exec.conf`, the result is propagated with `?`,
 and `main` returns it. The process is gone milliseconds after Hyprland starts
-it, before one window has been launched, and with it goes the periodic save
-that the same process was going to run. `pgrep hyprsession` on a fresh boot is
-the fastest way to see it: nothing there, while the other things started from
-the same handler are running.
+it, before one window has been launched, and with it goes the saving that the
+same process was going to do. `pgrep hyprsession` on a fresh boot is the fastest
+way to see it: nothing there, while the other things started from the same
+handler are running. A session that came back short of a browser, weeks after
+the AUR build stopped working, was this and nothing cleverer: no save had run
+since the login before, so the file was older than the browser window.
 
 There is no upstream fix to wait for. `joshurtree/hyprsession` last moved in
 January 2026, and the tag the AUR builds is that same commit.
@@ -212,8 +206,8 @@ launched with `hl.exec_cmd(command, rules)`, and the rule prefix already sitting
 in `exec.conf` is read into the table that call wants, so saved sessions from
 before the change still load. The adjustments afterwards go through `hl.dsp.*`.
 
-It carries two other fixes, both for things that were wrong before Hyprland
-changed anything.
+It carries other fixes, for things that were wrong before Hyprland changed
+anything.
 
 Upstream matched a saved window to a real one by title, and a terminal rewrites
 its title the moment a shell prompt appears. Two of them then match each other,
@@ -228,34 +222,37 @@ saved as `foot -e sh -c sleep 900` and came back as a different program, in that
 case one that exits immediately. The fork keeps the argument vector whole and
 quotes each word for the shell that will reopen it, which is a shell: Hyprland
 runs what it is given through `sh -c`. So `exec.conf` now has quotes in it where
-an argument needs them.
+an argument needs them. Signal needed the opposite: it hands the kernel its whole
+command line as a single argument, spaces and all, so quoting that whole named a
+program that does not exist, and a lone argument carrying spaces is read back as
+the words it used to be.
 
 ## When it misbehaves
 
 **Windows come back on the wrong workspace.** Hyprsession records the workspace
 a window was on, but window rules run at open time and can move it again. Check
-`window-workspaces.conf` for a rule that outranks the restore.
+`window-workspaces.lua` for a rule that outranks the restore.
 
-**Some applications never come back.** It restores a window by rerunning the
-command that made it, read from `hyprctl clients`. Anything launched by a
-desktop file with a wrapper, or by a portal, may report a command that does not
-relaunch it. `hyprsession command <class> "<command>"` exists for teaching it the
-special cases, and writes a small script into `~/.local/bin` that runs the right
-thing.
+**A window that was open does not come back.** Look for it in
+`~/.local/state/hyprsession.log.1` first. No `Sending: exec` line for it means it
+was not in the file, so nothing saved it: check that hyprsession was running at
+all last session, with `Watching session` in that log. A line that was sent and
+brought back nothing is a command that does not relaunch the program, which is
+what `hyprsession command <class> "<command>"` is for. It writes a small script
+into `~/.local/bin` that runs the right thing.
 
 **Everything comes back twice.** Something else is also restoring the session,
 usually a second `exec-once` left over from an older config. Check
-`autostart.conf` and `hyprland.conf` for a duplicate.
+`autostart.conf` and `hyprland.conf`, both of which Hyprland ignores under a Lua
+config but which an older setup may still have.
 
-**Nothing is saved at all.** Run `hyprsession --save-interval 5` in a terminal
-and watch it. Errors that vanish under `exec-once` are visible there.
+**Nothing is saved at all.** `pgrep hyprsession` on a fresh login. Nothing there
+means it died during the restore, and the log says on which line.
 
 ## What this repo tracks
 
 | File | Why |
 | --- | --- |
-| `dot_config/hypr/autostart.lua` | Steps 1 and 2 |
-| `dot_config/systemd/user/hyprsession-save.service` | Step 3 |
-| `dot_config/systemd/user/shutdown.target.wants/symlink_hyprsession-save.service.tmpl` | Step 4, so nobody has to run `systemctl enable` |
+| `dot_config/hypr/autostart.lua` | Step 1, and the note that step 2 is deliberately empty |
 
 The saved sessions themselves are not tracked. A desktop belongs to a machine.
