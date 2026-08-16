@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "local.music",
+  "name": "Music",
+  "version": "1.0.0",
+  "author": "jmad",
+  "description": "A music note that pulls the kew scratchpad into view",
+  "kinds": ["bar-widget"],
+  "entryPoints": { "barWidget": "MusicWidget.qml" },
+  "barWidget": {
+    "displayName": "Music",
+    "description": "Opens the music scratchpad, and leans on the accent colour while something is playing",
+    "category": "Media",
+    "allowMultiple": false,
+    "defaultSection": "center",
+    "defaults": {
+      "command": "~/.config/hypr/scripts/scratchpad music kew"
+    },
+    "schema": [
+      {
+        "key": "command",
+        "type": "string",
+        "label": "Command",
+        "description": "What a click runs. Defaults to the same scratchpad SUPER + M opens."
+      }
+    ]
+  }
+}

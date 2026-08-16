@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "local.obs",
+  "name": "OBS",
+  "version": "1.0.0",
+  "author": "jmad",
+  "description": "A record dot that says whether OBS is closed, open, or live",
+  "kinds": ["bar-widget"],
+  "entryPoints": { "barWidget": "ObsWidget.qml" },
+  "barWidget": {
+    "displayName": "OBS",
+    "description": "Grey when OBS is closed, lit while a stream is live, and a click away from the window either way",
+    "category": "Media",
+    "allowMultiple": false,
+    "defaultSection": "center",
+    "defaults": {
+      "intervalMs": 3000
+    },
+    "schema": [
+      {
+        "key": "intervalMs",
+        "type": "integer",
+        "label": "Poll interval (ms)",
+        "min": 1000,
+        "max": 30000,
+        "step": 500,
+        "description": "How often the OBS log is read for a streaming banner."
+      }
+    ]
+  }
+}

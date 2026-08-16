@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "local.quicksettings",
+  "name": "Quick settings",
+  "version": "1.0.0",
+  "author": "jmad",
+  "description": "One bar icon holding the controls that do not deserve one each",
+  "kinds": ["bar-widget"],
+  "entryPoints": { "barWidget": "Panel.qml" },
+  "barWidget": {
+    "displayName": "Quick settings",
+    "description": "Volume, brightness, Wi-Fi, Bluetooth, night light, do not disturb, stay awake and power profile in a single popup",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

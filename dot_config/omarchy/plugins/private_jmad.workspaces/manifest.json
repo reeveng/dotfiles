@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "jmad.workspaces",
+  "name": "My Workspaces",
+  "version": "1.0.0",
+  "author": "Omarchy",
+  "description": "Workspace number indicators",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Workspaces.qml"
+  },
+  "barWidget": {
+    "displayName": "My Workspaces",
+    "description": "Workspace number indicators, tightened for a side bar",
+    "category": "Compositor",
+    "allowMultiple": false,
+    "defaults": {
+      "buttonSize": 20,
+      "rowSpacing": 0
+    },
+    "schema": [
+      {
+        "key": "rowSpacing",
+        "type": "number",
+        "label": "Row spacing",
+        "description": "Gap between workspace numbers on a vertical bar, in points."
+      },
+      {
+        "key": "buttonSize",
+        "type": "number",
+        "label": "Button size",
+        "description": "Height of one workspace number on a vertical bar, in points."
+      }
+    ]
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.workspaces"
+  }
+}
