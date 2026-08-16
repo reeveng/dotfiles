@@ -3,10 +3,10 @@
 # While OBS is streaming: notifications stay quiet and the screen does not lock
 # itself. When the stream ends, or OBS dies, both go back exactly as they were.
 #
-# The stream state comes from the "==== Streaming Start/Stop ====" banners OBS
-# writes to its session log, the same source the waybar dot uses.
+# The stream state comes from obs-stream-state, the same source the bar dot
+# uses. Do not disturb and the idle lock both live in the Omarchy shell now;
+# the older mako and hypridle this drove are no longer on the machine.
 
-LOGS="${OBS_LOG_DIR:-$HOME/.config/obs-studio/logs}"
 INTERVAL="${OBS_WATCH_INTERVAL:-2}"
 
 silenced=0
@@ -14,36 +14,35 @@ idle_held=0
 live=0
 
 streaming() {
-  pgrep -x obs >/dev/null || return 1
-  local log last
-  log=$(ls -t "$LOGS"/*.txt 2>/dev/null | head -1)
-  last=$(grep -h "==== Streaming \(Start\|Stop\)" "$log" 2>/dev/null | tail -1)
-  [[ $last == *"Streaming Start"* ]]
+  [[ $(obs-stream-state) == "live" ]]
+}
+
+dnd_is_on() {
+  [[ $(omarchy-shell notifications isDnd 2>/dev/null) == "on" ]]
+}
+
+stay_awake_is_on() {
+  omarchy-toggle-idle status 2>/dev/null | grep -q '"enabled":true'
 }
 
 hold() {
   notify-send -u low "󰑋  Live" "Notifications silenced, screen will not lock"
 
-  if ! makoctl mode | grep -q "do-not-disturb"; then
-    makoctl mode -a do-not-disturb >/dev/null && silenced=1
+  if ! dnd_is_on; then
+    omarchy-shell notifications setDnd true >/dev/null 2>&1 && silenced=1
   fi
 
-  if pgrep -x hypridle >/dev/null; then
-    pkill -x hypridle && idle_held=1
+  if ! stay_awake_is_on; then
+    omarchy-toggle-idle stay-awake >/dev/null 2>&1 && idle_held=1
   fi
-
-  pkill -RTMIN+9 waybar
-  pkill -RTMIN+10 waybar
 }
 
 release() {
-  ((silenced)) && makoctl mode -r do-not-disturb >/dev/null
-  ((idle_held)) && uwsm-app -- hypridle >/dev/null 2>&1 &
+  ((silenced)) && omarchy-shell notifications setDnd false >/dev/null 2>&1
+  ((idle_held)) && omarchy-toggle-idle allow-idle >/dev/null 2>&1
   silenced=0
   idle_held=0
 
-  pkill -RTMIN+9 waybar
-  pkill -RTMIN+10 waybar
   notify-send -u low "󰑋  Stream ended" "Notifications and idle lock are back"
 }
 

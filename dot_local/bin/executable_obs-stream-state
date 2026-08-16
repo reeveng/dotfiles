@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# One word for what OBS is doing: live, idle, or closed.
+#
+# OBS writes "==== Streaming Start ====" and "==== Streaming Stop ====" banners
+# into the log of the running session, so whichever came last is the answer. No
+# websocket, no password, no extra package.
+#
+# OBS_LOG_DIR overrides the directory, for testing.
+
+LOGS="${OBS_LOG_DIR:-$HOME/.config/obs-studio/logs}"
+
+if ! pgrep -x obs >/dev/null; then
+  echo closed
+  exit 0
+fi
+
+log=$(ls -t "$LOGS"/*.txt 2>/dev/null | head -1)
+last=$(grep -h "==== Streaming \(Start\|Stop\)" "$log" 2>/dev/null | tail -1)
+
+if [[ $last == *"Streaming Start"* ]]; then
+  echo live
+else
+  echo idle
+fi
