@@ -60,6 +60,11 @@ rec {
       "dunst"
       "freerdp"
       "hyprshot"
+      # Built from ~/Documents/projects/hyprsession, not fetched. The AUR build
+      # cannot drive a Hyprland that reads a Lua config; docs/hyprsession.md
+      # says why. The name stays here because the installer only fetches what
+      # pacman cannot already find, and the local build carries an epoch so an
+      # upgrade will not put the AUR one back.
       "hyprsession"
       "konsole"
       "pavucontrol"

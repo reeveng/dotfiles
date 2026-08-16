@@ -10,27 +10,34 @@ Everything below is already in this repo. Follow it to understand what
 
 ## Before you start
 
-You need Hyprland and the package:
+You need Hyprland and a build of hyprsession that speaks to it. The AUR package
+does not, on a Hyprland that reads a Lua config, and "Why the AUR package cannot
+be used" below is the whole of that story. This machine builds a fork instead:
 
 ```bash
-yay -S hyprsession
+cd ~/Documents/projects/hyprsession
+makepkg -si
 ```
 
-It is AUR-only. On this repo's machines it comes from `packages.nix` in the
-`desktop` group, so a `chezmoi apply` has already fetched it.
+The `PKGBUILD` in that repo carries an epoch, so `yay -Syu` leaves it alone
+rather than putting the AUR build back over it. `packages.nix` still names
+`hyprsession` in the `desktop` group; the installer only fetches what `pacman
+-Qq` cannot find, so the local build satisfies it and nothing reaches for the
+AUR.
 
 Check it is there:
 
 ```bash
 hyprsession --help | head -1
+pacman -Q hyprsession            # 1:0.2.1-1, the epoch says it is the fork
 ```
 
 ## Step 1: restore at login, and keep saving
 
-Put this in `~/.config/hypr/autostart.conf`:
+Put this in `~/.config/hypr/autostart.lua`, inside the `hyprland.start` handler:
 
-```conf
-exec-once = hyprsession --save-interval 120
+```lua
+hl.exec_cmd("hyprsession --save-interval 120")
 ```
 
 One line does two jobs. On startup it reads the last saved session and reopens
@@ -40,20 +47,21 @@ The interval is a trade. Save often and you lose less when the machine dies
 badly; save rarely and you spend less time asking `hyprctl` what is open. The
 default is 60. Two minutes is comfortable.
 
-Hyprland runs `autostart.conf` only if `hyprland.conf` sources it, which
-Omarchy's does by default.
+Omarchy's `hyprland.lua` reaches this file through `require("hypr.autostart")`.
+An `autostart.conf` beside it is read by nobody. Hyprland picks one config
+language per session and this one is Lua.
 
 ## Step 2: save when Hyprland exits cleanly
 
-Directly under it:
+In the `hyprland.shutdown` handler of the same file:
 
-```conf
-exec-shutdown = hyprsession save
+```lua
+hl.exec_cmd("hyprsession save")
 ```
 
-`exec-shutdown` fires when Hyprland quits in an orderly way, so logging out saves
-the desktop as it was at that instant rather than as it was up to two minutes
-ago.
+`hyprland.shutdown` fires when Hyprland quits in an orderly way, so logging out
+saves the desktop as it was at that instant rather than as it was up to two
+minutes ago.
 
 The mode is a bare word in that position. Most writing about hyprsession, this
 file included until recently, spells it `--mode save-and-exit`, and that form is
@@ -137,8 +145,8 @@ grep -c exec ~/.local/share/hyprsession/default/exec.conf
 put it back. A recent mtime on both means the timer is running.
 
 **The clean exit.** Log out and back in. Your windows should return. If they do
-not, `exec-shutdown` is not firing, and the usual cause is that `autostart.conf`
-is not sourced.
+not, the `hyprland.shutdown` handler is not firing, and the usual cause is that
+`autostart.lua` is not required from `hyprland.lua`.
 
 **The unpleasant exit.** This is the one worth testing deliberately, because it
 is the one that silently does nothing:
@@ -168,6 +176,60 @@ step 2 needs no argument beyond `save`.
 
 Useful for a layout you return to rather than one you happen to have.
 
+## Why the AUR package cannot be used
+
+Hyprland 0.56 kept its IPC socket and changed what one command on it means.
+Under a Lua config, `dispatch <payload>` is no longer a dispatcher name followed
+by arguments. Hyprland wraps the payload as `return hl.dispatch(<payload>)` and
+hands it to the interpreter, so the old spelling is now a Lua syntax error:
+
+```
+$ printf 'dispatch exec foot' | socat - UNIX-CONNECT:$SOCK
+error: [string "return hl.dispatch(exec foot)"]:1: ')' expected near 'foot'
+
+ → Note: dispatch in lua is a shorthand for hl.dispatch(...), your syntax
+   might need to be updated.
+```
+
+hyprsession is built on hyprland-rs, which sends exactly that old spelling.
+Reading is untouched, and everything hyprsession does to save a session is
+reading. So the save kept working and looked healthy while the restore had
+stopped happening at all.
+
+It fails silently because of where the error lands. The first thing a restore
+does is dispatch the commands in `exec.conf`, the result is propagated with `?`,
+and `main` returns it. The process is gone milliseconds after Hyprland starts
+it, before one window has been launched, and with it goes the periodic save
+that the same process was going to run. `pgrep hyprsession` on a fresh boot is
+the fastest way to see it: nothing there, while the other things started from
+the same handler are running.
+
+There is no upstream fix to wait for. `joshurtree/hyprsession` last moved in
+January 2026, and the tag the AUR builds is that same commit.
+
+The fork replaces the dispatch calls with `eval`, which takes Lua. Programs are
+launched with `hl.exec_cmd(command, rules)`, and the rule prefix already sitting
+in `exec.conf` is read into the table that call wants, so saved sessions from
+before the change still load. The adjustments afterwards go through `hl.dsp.*`.
+
+It carries two other fixes, both for things that were wrong before Hyprland
+changed anything.
+
+Upstream matched a saved window to a real one by title, and a terminal rewrites
+its title the moment a shell prompt appears. Two of them then match each other,
+and the second window to open is dragged onto the first one's workspace. The
+fork matches on the class and the title a window had when it first mapped, and
+gives each saved window to one real window only.
+
+Upstream also read `/proc/<pid>/cmdline`, replaced the NUL separators with
+spaces, and split the result on whitespace again, which loses every word
+boundary an argument had. A window opened as `foot -e sh -c 'sleep 900'` was
+saved as `foot -e sh -c sleep 900` and came back as a different program, in that
+case one that exits immediately. The fork keeps the argument vector whole and
+quotes each word for the shell that will reopen it, which is a shell: Hyprland
+runs what it is given through `sh -c`. So `exec.conf` now has quotes in it where
+an argument needs them.
+
 ## When it misbehaves
 
 **Windows come back on the wrong workspace.** Hyprsession records the workspace
@@ -192,7 +254,7 @@ and watch it. Errors that vanish under `exec-once` are visible there.
 
 | File | Why |
 | --- | --- |
-| `dot_config/hypr/autostart.conf` | Steps 1 and 2 |
+| `dot_config/hypr/autostart.lua` | Steps 1 and 2 |
 | `dot_config/systemd/user/hyprsession-save.service` | Step 3 |
 | `dot_config/systemd/user/shutdown.target.wants/symlink_hyprsession-save.service.tmpl` | Step 4, so nobody has to run `systemctl enable` |
 

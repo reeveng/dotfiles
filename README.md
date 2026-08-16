@@ -114,12 +114,19 @@ flags it is started with and by when it is asked to run, which is three places:
 
 | Where | What |
 | --- | --- |
-| `hypr/autostart.conf` | `exec-once = hyprsession --save-interval 120` restores the last session at login, then writes a new one every two minutes |
-| `hypr/autostart.conf` | `exec-shutdown = hyprsession save` catches a clean Hyprland exit |
-| `systemd/user/hyprsession-save.service` | catches the case `exec-shutdown` misses, when the machine goes down without Hyprland getting to quit |
+| `hypr/autostart.lua` | `hl.exec_cmd("hyprsession --save-interval 120")` on `hyprland.start` restores the last session at login, then writes a new one every two minutes |
+| `hypr/autostart.lua` | `hl.exec_cmd("hyprsession save")` on `hyprland.shutdown` catches a clean Hyprland exit |
+| `systemd/user/hyprsession-save.service` | catches the case the shutdown handler misses, when the machine goes down without Hyprland getting to quit |
 
-The unit is a belt beside that brace. Hyprland only runs `exec-shutdown` when it
-exits in an orderly way, so a reboot from outside the session would otherwise
+The binary is not the AUR one. Hyprland 0.56 reads a Lua config here, which
+turned the IPC `dispatch` payload into a Lua expression and broke every
+dispatcher the AUR build sends, the restore included.
+`~/Documents/projects/hyprsession` is a fork that talks to it in Lua, and
+[`docs/hyprsession.md`](docs/hyprsession.md) has the reasoning.
+
+The unit is a belt beside that brace. Hyprland only runs its shutdown handler
+when it exits in an orderly way, so a reboot from outside the session would
+otherwise
 lose up to two minutes of layout. The unit runs `Before=shutdown.target` with
 `DefaultDependencies=no`, which puts it early enough to still see the windows.
 
