@@ -11,16 +11,18 @@
           ]
         },
         {
+          "id": "omarchy.clock",
           "format": "dddd HH:mm",
           "formatAlt": "d MMMM 'W'ww yyyy",
-          "id": "omarchy.clock",
-          "verticalFormat": "HH\n—\nmm"
-        },
-        {
-          "id": "local.music"
+          "verticalFormat": "h\n—\nmm\nAP",
+          "birthYear": 0,
+          "lifeExpectancy": 60
         },
         {
           "id": "local.obs"
+        },
+        {
+          "id": "local.music"
         }
       ],
       "left": [
@@ -56,7 +58,8 @@
       ]
     },
     "position": "right",
-    "transparent": false
+    "transparent": false,
+    "id": "jmad.bar"
   },
   "idle": {
     "lock": 300,
