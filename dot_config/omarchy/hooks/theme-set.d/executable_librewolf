@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# Point every LibreWolf profile at the current Omarchy theme's colours.
+#
+# LibreWolf reads its user stylesheets once, at startup, so a running browser
+# keeps the old colours until it is restarted.
+
+THEME_DIR="$HOME/.local/state/omarchy/current/theme"
+CHROME_SOURCE="$THEME_DIR/librewolf.css"
+CONTENT_SOURCE="$THEME_DIR/librewolf-content.css"
+
+[[ -f $CHROME_SOURCE ]] || exit 0
+
+ensure_import() {
+  local sheet="$1"
+  local generated="$2"
+  local line="@import url(\"$generated\");"
+
+  if [[ -f $sheet ]]; then
+    grep -qF "$generated" "$sheet" && return
+
+    # An @import is only honoured ahead of every rule, so it goes on line one.
+    { printf '%s\n' "$line"; cat "$sheet"; } >"$sheet.omarchy" &&
+      mv "$sheet.omarchy" "$sheet"
+  else
+    printf '%s\n' "$line" >"$sheet"
+  fi
+}
+
+ensure_pref() {
+  local user_js="$1"
+  local pref="toolkit.legacyUserProfileCustomizations.stylesheets"
+
+  [[ -f $user_js ]] && grep -qF "$pref" "$user_js" && return
+  printf 'user_pref("%s", true);\n' "$pref" >>"$user_js"
+}
+
+theme_profile() {
+  local profile="$1"
+
+  mkdir -p "$profile/chrome"
+
+  cp "$CHROME_SOURCE" "$profile/chrome/omarchy-theme.css"
+  ensure_import "$profile/chrome/userChrome.css" omarchy-theme.css
+
+  if [[ -f $CONTENT_SOURCE ]]; then
+    cp "$CONTENT_SOURCE" "$profile/chrome/omarchy-theme-content.css"
+    ensure_import "$profile/chrome/userContent.css" omarchy-theme-content.css
+  fi
+
+  ensure_pref "$profile/user.js"
+}
+
+themed_any=0
+
+for root in "$HOME/.librewolf" "$HOME/.var/app/io.gitlab.librewolf-community/.librewolf"; do
+  [[ -d $root ]] || continue
+
+  for profile in "$root"/*/; do
+    [[ -f ${profile}prefs.js || -f ${profile}times.json ]] || continue
+    theme_profile "${profile%/}"
+    themed_any=1
+  done
+done
+
+if ((themed_any)) && pgrep -x librewolf >/dev/null; then
+  omarchy-notification-send "LibreWolf takes the new colours on its next start" -t 2000 2>/dev/null
+fi
