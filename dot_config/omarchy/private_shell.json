@@ -1,6 +1,7 @@
 {
   "bar": {
     "centerAnchor": "omarchy.clock",
+    "id": "jmad.bar",
     "layout": {
       "center": [
         {
@@ -12,14 +13,14 @@
         },
         {
           "id": "omarchy.clock",
+          "birthYear": 0,
           "format": "dddd HH:mm",
           "formatAlt": "d MMMM 'W'ww yyyy",
-          "verticalFormat": "h\n—\nmm\nAP",
-          "birthYear": 0,
-          "lifeExpectancy": 60
+          "lifeExpectancy": 60,
+          "verticalFormat": "HH\nmm"
         },
         {
-          "id": "local.obs"
+          "id": "jmad.tally"
         },
         {
           "id": "local.music"
@@ -32,7 +33,8 @@
         {
           "buttonSize": 18,
           "id": "jmad.workspaces",
-          "rowSpacing": 0
+          "leadingSpacing": 14,
+          "rowSpacing": 6
         }
       ],
       "right": [
@@ -53,18 +55,27 @@
         },
         {
           "id": "jmad.power",
-          "showPercentage": true
+          "showPercentage": false
         }
       ]
     },
     "position": "right",
-    "transparent": false,
-    "id": "jmad.bar"
+    "transparent": false
   },
+  "cloneSourceRestores": [
+    "jmad.background"
+  ],
+  "disabledPlugins": [
+    "omarchy.background"
+  ],
   "idle": {
     "lock": 300,
     "screensaver": 150
   },
-  "plugins": [],
+  "plugins": [
+    {
+      "id": "jmad.background"
+    }
+  ],
   "version": 1
 }
