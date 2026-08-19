@@ -20,7 +20,8 @@
           "verticalFormat": "HH\nmm"
         },
         {
-          "id": "jmad.tally"
+          "id": "jmad.tally",
+          "streamBrowser": "stream-browser.desktop"
         },
         {
           "id": "local.music"

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Stream Browser
+GenericName=Web Browser
+Comment=A browser with nothing in it, for links opened while the stream is live
+Icon=chromium
+Exec=chromium --class=stream-browser --user-data-dir={{ .chezmoi.homeDir }}/.local/share/stream-browser %U
+Terminal=false
+StartupNotify=true
+StartupWMClass=stream-browser
+Categories=Network;WebBrowser;
+MimeType=text/html;x-scheme-handler/http;x-scheme-handler/https;
