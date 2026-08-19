@@ -16,8 +16,6 @@ hl.on("hyprland.start", function()
   -- without this the time profiles in hyprsunset.conf never run.
   hl.exec_cmd(o.launch("hyprsunset"))
 
-  -- Quiet notifications and hold the idle lock while OBS is streaming.
-  hl.exec_cmd("~/.local/bin/obs-live-watch")
 end)
 
 -- Nothing saves the session on the way out any more. Logging out kills what the
