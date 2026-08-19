@@ -21,8 +21,12 @@
         },
         {
           "hideClipboard": true,
+          "hideHistory": true,
           "hideNotifications": true,
           "hideRecents": true,
+          "hideWidgets": [
+            "omarchy.tailscale"
+          ],
           "id": "jmad.tally",
           "streamBrowser": "stream-browser.desktop"
         },

@@ -177,3 +177,8 @@ export PATH="$HOME/.local/bin:$PATH"
 # cat, with syntax highlighting, and still just cat: no pager, no line numbers,
 # no headers. `command cat` when a script wants the plain thing.
 alias cat='bat --paging=never --style=plain'
+
+# While a stream is live, this shell keeps its history somewhere else, so
+# Ctrl-R and autosuggestion have nothing to offer the camera.
+[[ -r ~/.config/omarchy/plugins/jmad.tally/shell/tally-history.sh ]] &&
+  source ~/.config/omarchy/plugins/jmad.tally/shell/tally-history.sh

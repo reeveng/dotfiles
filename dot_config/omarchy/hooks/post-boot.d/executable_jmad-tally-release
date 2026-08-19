@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# A stream that ended in a power cut left the desk put away, and nothing else
+# is going to come along and fetch it back. A release is safe at any moment and
+# does nothing when there is nothing held, so the first thing a fresh desktop
+# does is ask for its history.
+#
+# Install it with:
+#
+#   omarchy hook install post-boot ~/.config/omarchy/plugins/jmad.tally/hooks/post-boot
+
+for root in "${XDG_CONFIG_HOME:-$HOME/.config}"/omarchy/plugins "$HOME"/.local/share/omarchy/plugins; do
+  hold="$root/jmad.tally/bin/obs-tally-hold"
+  [[ -x $hold ]] && exec "$hold" release >/dev/null
+done
