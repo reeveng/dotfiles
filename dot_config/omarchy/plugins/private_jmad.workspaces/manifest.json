@@ -18,6 +18,7 @@
     "allowMultiple": false,
     "defaults": {
       "buttonSize": 20,
+      "leadingSpacing": 0,
       "rowSpacing": 0
     },
     "schema": [
@@ -26,6 +27,12 @@
         "type": "number",
         "label": "Row spacing",
         "description": "Gap between workspace numbers on a vertical bar, in points."
+      },
+      {
+        "key": "leadingSpacing",
+        "type": "number",
+        "label": "Leading spacing",
+        "description": "Gap above the first workspace number, holding it clear of the widget above."
       },
       {
         "key": "buttonSize",

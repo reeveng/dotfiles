@@ -1407,12 +1407,11 @@ Item {
     cursorShape: dragging ? Qt.ClosedHandCursor : Qt.ArrowCursor
     pressAndHoldInterval: 200
 
+    // Local change: upstream starts a bar move here, so a press-and-hold or a
+    // short drag throws the bar at whichever screen edge the pointer is
+    // nearest. The edge is a setting, not a gesture; it stays where
+    // bar.position in ~/.config/omarchy/shell.json puts it.
     function startDrag(x, y) {
-      if (dragging) return
-      dragging = true
-      root.beginBarMove(root.targetWindow(gestureArea))
-      var scenePoint = gestureArea.mapToItem(null, x, y)
-      root.updateBarMove(root.windowScreenPoint(scenePoint, root.barMoveWindow))
     }
 
     onPressed: function(mouse) {

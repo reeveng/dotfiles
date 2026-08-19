@@ -43,13 +43,19 @@ BarWidget {
   readonly property real rowGap: Style.space(root.setting("rowSpacing", 0))
   readonly property real buttonSize: Style.space(root.setting("buttonSize", 20))
 
+  // A bar section stacks its widgets with no spacing, so workspace 1 lands
+  // against whatever sits above it. Above it here is the launcher, and a
+  // number pressed slightly high opens the menu instead.
+  readonly property real leadingGap: root.vertical ? Style.space(root.setting("leadingSpacing", 0)) : 0
+
   implicitWidth: grid.implicitWidth + trailingGap
-  implicitHeight: grid.implicitHeight
+  implicitHeight: grid.implicitHeight + leadingGap
 
   GridLayout {
     id: grid
     anchors.fill: parent
     anchors.rightMargin: root.trailingGap
+    anchors.topMargin: root.leadingGap
     columns: root.vertical ? 1 : root.workspaceIds().length
     columnSpacing: root.vertical ? 0 : Style.space(1)
     rowSpacing: root.vertical ? root.rowGap : 0
