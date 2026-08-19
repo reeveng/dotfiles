@@ -20,6 +20,9 @@
           "verticalFormat": "HH\nmm"
         },
         {
+          "hideClipboard": true,
+          "hideNotifications": true,
+          "hideRecents": true,
           "id": "jmad.tally",
           "streamBrowser": "stream-browser.desktop"
         },
