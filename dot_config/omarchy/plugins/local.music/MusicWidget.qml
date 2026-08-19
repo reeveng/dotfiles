@@ -14,12 +14,23 @@ BarWidget {
 
   readonly property string playerCommand: setting("player", "kew")
 
-  readonly property var player: Mpris.players && Mpris.players.values.length > 0
-    ? Mpris.players.values[0]
-    : null
+  // The player is picked by name. A browser tab publishes MPRIS as well, and
+  // the first entry in the list is whoever registered first, so reading index
+  // zero reports the browser's silence while kew plays.
+  readonly property var player: {
+    var players = Mpris.players ? Mpris.players.values : []
+    var wanted = root.playerCommand.toLowerCase()
+    for (var i = 0; i < players.length; i++) {
+      var p = players[i]
+      var names = [p.dbusName, p.desktopEntry, p.identity].join(" ").toLowerCase()
+      if (names.indexOf(wanted) !== -1) return p
+    }
+    return null
+  }
 
-  // kew publishes no MPRIS, so the player being alive is the only signal
-  // there is for it. Anything that does publish gets read properly.
+  // MPRIS pushes: kew signals PropertiesChanged the moment it starts, pauses
+  // or stops, so the colour lands with the keypress. The probe below is for a
+  // player that publishes nothing, and only runs while there is no such signal.
   property bool playerRunning: false
   readonly property bool live: player !== null ? player.isPlaying : playerRunning
 
@@ -41,11 +52,9 @@ BarWidget {
     onExited: function(code) { root.playerRunning = code === 0 }
   }
 
-  // Nothing here is worth a tight clock: the answer changes when the user
-  // starts or stops a player, and a few seconds late costs nothing.
   Timer {
     interval: 10000
-    running: true
+    running: root.player === null
     repeat: true
     triggeredOnStart: true
     onTriggered: root.refresh()
@@ -62,6 +71,11 @@ BarWidget {
     // shape as well would make the bar flicker between two silhouettes.
     text: "󰎈"
     active: root.live
+    // The bar's own active colour is the theme's red, which is right for OBS
+    // going live and wrong for music playing: red in a bar means something
+    // wants you. Playing is not an alarm, so it lights in the theme's accent
+    // and stays whatever green, blue or grey the current theme is in.
+    activeColor: Color.accent
     tooltipText: root.nowPlaying
     onPressed: function(b) {
       if (b === Qt.MiddleButton) root.bar.run("omarchy-shell media playPause")
