@@ -36,7 +36,7 @@
       ],
       "left": [
         {
-          "id": "omarchy.menu"
+          "id": "jmad.menu"
         },
         {
           "buttonSize": 18,
@@ -71,10 +71,12 @@
     "transparent": false
   },
   "cloneSourceRestores": [
-    "jmad.background"
+    "jmad.background",
+    "jmad.menu"
   ],
   "disabledPlugins": [
-    "omarchy.background"
+    "omarchy.background",
+    "omarchy.menu"
   ],
   "idle": {
     "lock": 300,
